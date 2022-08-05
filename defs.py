@@ -25,13 +25,15 @@ def run(
     background=False,
     stdout=None,
     stderr=None,
+    do_print=True,
     **kwargs,
 ):
     if shell:
         cmd = args
     else:
         cmd = shlex.join(args)
-    eprint(f"+ {cmd}")
+    if do_print:
+        eprint(f"+ {cmd}")
     if background:
         assert not capture
         assert not check, "Cannot have check=True with background=True"
@@ -80,21 +82,22 @@ def ssh_shell(
     if check is None:
         check = not background
     user_host = f"{user}@{host}"
-    bash_command = bash_command_with_login(command, use_tty)
+    command = bash_command(command, interactive=use_tty, use_login=False)
     ssh_opts = ["-A", "-o", "BatchMode=yes"]
     if use_tty:
         assert not capture, "Must run with use_tty=False"
         assert not background, "Must run with use_tty=False"
-        args = ["ssh", "-tt"] + ssh_opts + [user_host, bash_command]
+        args = ["ssh", "-tt"] + ssh_opts + [user_host, command]
         # TODO: How to prevent TTY from getting corrupted by programs like
-        # tshark (which can clear a line and mess things up)?
+        # tshark (which can clear a line and mess things up)? For now,
+        # workaround is to use `reset_tty()`.
         return run(args, check=check)
     elif background:
-        # WARNING: If we use -t or -tt, then per above, (P)TTY gets corrupted
-        # (dunno why yet). However, if we don't use (P)TTY, then SSH will not
-        # kill its child processes :(
+        # WARNING: We use -t for TTY allocation so that when SSH gets a signal,
+        # it gets passed to children. However, we have to reset tty
+        # (see below).
         # https://unix.stackexchange.com/questions/40023/get-ssh-to-forward-signals
-        args = ["ssh",] + ssh_opts + [user_host, bash_command]
+        args = ["ssh", "-t"] + ssh_opts + [user_host, command]
         return run(
             args,
             background=True,
@@ -102,7 +105,7 @@ def ssh_shell(
             stderr=subprocess.STDOUT,
         )
     else:
-        args = ["ssh"] + ssh_opts + [user_host, bash_command]
+        args = ["ssh"] + ssh_opts + [user_host, command]
         stdout = run(args, capture=True, check=check).strip()
         if capture:
             return stdout
@@ -110,9 +113,11 @@ def ssh_shell(
             print(indent(stdout, f"[{host}] "))
 
 
-def bash_command_with_login(command, interactive):
+def bash_command(command, *, interactive, use_login):
     # Ensures command is run as bash login shell (so ~/.bashrc is used).
-    bash_opts = ["--login"]
+    bash_opts = []
+    if use_login:
+        bash_opts = ["--login"]
     if interactive:
         bash_opts += ["-i"]
     return shlex.join(["bash"] + bash_opts + ["-c", command])
@@ -159,6 +164,19 @@ def close_processes_context(process_map):
                 should_re_raise = True
         if should_re_raise:
             raise KeyboardInterrupt
+
+
+def reset_tty():
+    # https://superuser.com/a/1225270/733549
+    run(["stty", "sane"], check=True, do_print=False)
+
+
+@contextmanager
+def reset_tty_context():
+    try:
+        yield
+    finally:
+        reset_tty()
 
 
 def read_available(f):

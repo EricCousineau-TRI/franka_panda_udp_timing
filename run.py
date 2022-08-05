@@ -99,7 +99,7 @@ def setup_control(config, run_remote, *, is_robot_fake):
 
         sudo tee {config.nopasswd_file} <<EOF
         # Installed by franka timing experiment stuff.
-        {config.control_user}  ALL = (ALL) NOPASSWD: /usr/bin/tshark *, /usr/bin/ping *, /usr/bin/killall -v tshark
+        {config.control_user}  ALL = (ALL) NOPASSWD: /usr/bin/tshark *, /usr/bin/ping *
         EOF
         sudo chmod 440 {config.nopasswd_file}
         """
@@ -250,13 +250,16 @@ def timing(
 
     process_map = {}
     poller = defs.ProcessPoller(process_map)
-    with defs.close_processes_context(process_map):
+    # N.B. reset_tty_context() is done for `tshark`'s weird stdout behavior.
+    with defs.reset_tty_context(), defs.close_processes_context(process_map):
         if run_robot_fake is not None:
             # be sure to advertise traffic on proper ethernet device (via IP address).
             process_map["run_mock_server"] = run_robot_fake(
                 f"{process_prefix}{run_mock_server} {robot_address}",
                 background=True,
             )
+            # Let server start up.
+            time.sleep(0.05)
 
         # Run libfranka client-side binary.
         process_map["read_robot_state"] = run_control(
@@ -274,6 +277,7 @@ def timing(
 
         # Wait for tshark to spin up.
         while "Capturing" not in poller.get_output("tshark"):
+            defs.reset_tty()
             poller.poll()
             time.sleep(0.1)
 
@@ -282,12 +286,6 @@ def timing(
         while time.time() < t_end:
             poller.poll()
             time.sleep(0.1)
-
-    # N.B. This is *very* dumb. See TODO in `ssh_shell`.
-    run_control("sudo killall -v tshark")
-    run_control("killall -v read_robot_state || :")
-    if run_robot_fake is not None:
-        run_robot_fake("killall -v run_mock_server || :")
 
     run_control(make_tshark_pcap_to_csv_command(pcap_file, csv_file))
     copy_and_plot_timing(config, file_basename, csv_file, plot_file)
