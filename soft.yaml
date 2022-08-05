@@ -1,0 +1,16 @@
+# All separate machines; user machines do *not* have real time, but they have
+# the ability to specify `chrt -r 20`.
+from_to:
+    - {from: "host", to: "control", address: "localhost"}
+    - {from: "host", to: "robot_fake", address: "<machine-2>"}
+    - {from: "control", to: "robot", address: "<fci-ip>"}
+control_user: null
+robot_fake_user: null
+
+# Be sure that <machine-2> is not running RT preempt!
+require_realtime: false
+ping_time: 1.0
+capture_time: 10.0
+
+libfranka_version: "0.7.1"
+scratch_dir: "/tmp/franka_timing/soft"

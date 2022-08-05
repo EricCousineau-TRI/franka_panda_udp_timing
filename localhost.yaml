@@ -1,0 +1,15 @@
+# "host", "control", and "robot_fake" are all the machine. Realtime not
+# enabled, but user can specify `chrt -r 20`.
+from_to:
+    - {from: "host", to: "control", address: "localhost"}
+    - {from: "host", to: "robot_fake", address: "localhost"}
+    - {from: "control", to: "robot", address: "192.168.200.10"}
+control_user: null
+robot_fake_user: null
+
+require_realtime: false
+ping_time: 1.0
+capture_time: 10.0
+
+libfranka_version: "0.7.1"
+scratch_dir: "/tmp/franka_timing/localhost"

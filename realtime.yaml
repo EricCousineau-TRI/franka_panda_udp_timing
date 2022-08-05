@@ -1,0 +1,13 @@
+from_to:
+    - {from: "host", to: "control", address: "<machine-3>"}
+    - {from: "host", to: "robot_fake", address: "<machine-2>"}
+    - {from: "control", to: "robot", address: "<fci-ip>"}
+control_user: robot-lab
+robot_fake_user: null
+
+require_realtime: true
+ping_time: 1.0
+capture_time: 10.0
+
+libfranka_version: "0.7.1"
+scratch_dir: "/tmp/franka_timing/realtime"
