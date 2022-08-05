@@ -3,7 +3,7 @@
 from_to:
     - {from: "host", to: "control", address: "localhost"}
     - {from: "host", to: "robot_fake", address: "localhost"}
-    - {from: "control", to: "robot", address: "192.168.200.10"}
+    - {from: "control", to: "robot", address: "<fci-ip>"}
 control_user: null
 robot_fake_user: null
 

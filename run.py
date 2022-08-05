@@ -57,15 +57,15 @@ class Config:
     # fmt: on
 
 
-def assert_realtime(remote_run):
+def assert_realtime(run_remote):
     # Make sure it's realtime RT_PREEMPT.
-    uname = remote_run("uname -a", capture=True)
+    uname = run_remote("uname -a", capture=True)
     assert " PREEMPT_RT " in uname, uname
 
 
-def build_libfranka(config, remote_run, franka_targets):
+def build_libfranka(config, run_remote, franka_targets):
     # fetch code and build specific target.
-    remote_run(
+    run_remote(
         dedent(
             fr"""
         rm -rf {config.scratch_dir}
@@ -139,7 +139,7 @@ def setup_robot_fake(config, run_remote):
 
 def cleanup_control(config, run_remote):
     # Remove sudoer modification.
-    remote_run(
+    run_remote(
         dedent(
             fr"""
         sudo rm -f {config.nopasswd_file}
