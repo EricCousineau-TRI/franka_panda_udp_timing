@@ -53,7 +53,7 @@ Passwordless SSH (e.g. using `ssh-copy-id`) must work among these connections.
 
 For localhost-only testing, this still uses `ssh localhost` (out of laziness).
 Make sure you run `ssh localhost` from **host** once to ensure it is in your
-trusted hosts.
+trusted hosts. You may need to run `ssh-keygen` to use `ssh-copy-id`.
 
 ## Software Requirements
 
@@ -63,6 +63,20 @@ Expects `libfranka` prereqs installed already on each machine.
 
 Host machine needs Python >=3.8, with `matplotlib`, `numpy`, `pandas`, and
 `PyYAML` installed.
+
+## Configuration
+
+By default, `./localhost.yaml` is selected. See `./run.py` to check / change
+this.
+
+To perform an experiment, the two main options you need to change are:
+
+- `from_to`: Replace `<fci-ip>` with the IP address of the arm you wish to
+  control.
+- `libfranka_version`: Change this to reflect the system version of you arm. \
+  For more details, see: \
+  <https://frankaemika.github.io/docs/compatibility.html> \
+  This has been tested on versions `0.7.1`, `0.9.0`, and `0.10.0`
 
 ## Running Experiments
 
